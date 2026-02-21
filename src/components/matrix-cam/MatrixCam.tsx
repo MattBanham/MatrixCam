@@ -3,6 +3,20 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import WebcamSelector from './WebcamSelector'; // Adjust the path to the correct file location
 import './MatrixCam.css';
 
+
+
+declare global {
+    interface Window {
+        matrixCamPresetAPI?: {
+            list: () => Promise<any[]>;
+            save: (preset: any) => Promise<any>;
+        };
+        matrixCamWindowAPI?: {
+            resize: (size: { width: number; height: number }) => Promise<any>;
+        };
+    }
+}
+
 const CHARACTER_SETS = {
     Alphanumeric: `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvxyz0123456789-+=/;':>}{[}]"%$£!^&*)(_~\``,
     'Inverted Alpha': `~_()*&^!£$%"]}[{}>:';/=+-9876543210zyxvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA`,
@@ -213,7 +227,9 @@ const MatrixCam = () => {
       ]);
       
     const [customPresets, setCustomPresets] = useState([]); // For user-saved presets
-    const [selectedPreset, setSelectedPreset] = useState([null]);
+    const [selectedPreset, setSelectedPreset] = useState('');
+    const [presetNameDraft, setPresetNameDraft] = useState('');
+    const presetApi = window.matrixCamPresetAPI;
     
     // 1) density string depends only on selectedCharacterSet
     const density = useMemo(() => CHARACTER_SETS[selectedCharacterSet], [selectedCharacterSet]);
@@ -350,7 +366,7 @@ const MatrixCam = () => {
     }, [stopWebcamStream]);
     
     // Preset Functions
-    const applyPreset = (preset) => {
+    const applyPreset = async (preset) => {
         // Apply all settings from the preset
         setSelectedFont(preset.settings.selectedFont);
         setSelectedColor(preset.settings.selectedColor);
@@ -376,6 +392,24 @@ const MatrixCam = () => {
         setRainDistorted(preset.settings.rainDistorted);
         setSelectedFade(preset.settings.selectedFade);
         setFadeExtent(preset.settings.fadeExtent);
+        setHideUI(Boolean(preset.settings.hideUI));
+
+        const presetWindowSize = preset?.settings?.windowSize;
+        if (
+            presetWindowSize &&
+            window.matrixCamWindowAPI?.resize &&
+            Number.isFinite(presetWindowSize.width) &&
+            Number.isFinite(presetWindowSize.height)
+        ) {
+            try {
+                await window.matrixCamWindowAPI.resize({
+                    width: Number(presetWindowSize.width),
+                    height: Number(presetWindowSize.height),
+                });
+            } catch (error) {
+                console.error('Failed to apply preset window size:', error);
+            }
+        }
       
         // Set the current preset
         setSelectedPreset(preset.name);
@@ -385,13 +419,20 @@ const MatrixCam = () => {
     const handlePresetSelection = (presetName) => {
         // Find the preset by name and apply it
         const preset = [...defaultPresets, ...customPresets].find(p => p.name === presetName);
-        if (preset) applyPreset(preset);
+        if (preset) void applyPreset(preset);
     };
 
     
-    const saveAsCustomPreset = (presetName) => {
+    const saveAsCustomPreset = async (presetName) => {
+        const normalizedName = (presetName ?? '').trim();
+        if (!normalizedName) {
+            window.alert('Enter a preset name first.');
+            return false;
+        }
+
+
         const newPreset = {
-          name: presetName,
+          name: normalizedName,
           settings: {
             selectedFont,
             selectedColor,
@@ -418,9 +459,30 @@ const MatrixCam = () => {
             rainDistorted,
             selectedFade,
             fadeExtent,
+            hideUI,
           },
         };
-        setCustomPresets([...customPresets, newPreset]);
+
+        let persistedPreset = newPreset;
+        if (presetApi?.save) {
+            try {
+                persistedPreset = await presetApi.save(newPreset);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                window.alert(`Failed to save preset: ${message}`);
+                return false;
+            }
+        }
+
+        setCustomPresets((prev) => {
+            const idx = prev.findIndex((preset) => preset.name.toLowerCase() === normalizedName.toLowerCase());
+            if (idx === -1) return [...prev, persistedPreset];
+            const next = [...prev];
+            next[idx] = persistedPreset;
+            return next;
+        });
+        setSelectedPreset(normalizedName);
+        return true;
       };
       
 
@@ -841,15 +903,45 @@ const MatrixCam = () => {
 
     // Loading presets
     useEffect(() => {
-        const savedCustomPresets = localStorage.getItem('customPresets');
-        if (savedCustomPresets) {
-          setCustomPresets(JSON.parse(savedCustomPresets));
-        }
+        let isCancelled = false;
+
+        const loadCustomPresets = async () => {
+            if (presetApi?.list) {
+                try {
+                    const savedCustomPresets = await presetApi.list();
+                    if (!isCancelled) {
+                        setCustomPresets(Array.isArray(savedCustomPresets) ? savedCustomPresets : []);
+                    }
+                } catch (error) {
+                    console.error('Failed to load custom presets from Electron storage:', error);
+                    if (!isCancelled) {
+                        setCustomPresets([]);
+                    }
+                }
+                return;
+            }
+
+            const savedCustomPresets = localStorage.getItem('customPresets');
+            if (savedCustomPresets && !isCancelled) {
+                setCustomPresets(JSON.parse(savedCustomPresets));
+            }
+        };
+
+        loadCustomPresets();
+
+        return () => {
+            isCancelled = true;
+        };
+      // Load once on mount
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
 
     useEffect(() => {
+        if (presetApi?.save) {
+            return;
+        }
         localStorage.setItem('customPresets', JSON.stringify(customPresets));
-    }, [customPresets]);
+    }, [customPresets, presetApi]);
       
     // Setup and drawing effects (separated from webcam management)
     useEffect(() => {
@@ -1263,7 +1355,26 @@ const MatrixCam = () => {
                         </select>
                     </div>
                     <div>
-                        <button onClick={() => saveAsCustomPreset(prompt("Enter preset name"))}>Save Current Settings as Preset</button>
+                        <label htmlFor="presetNameInput">Preset Name: </label>
+                        <input
+                            type="text"
+                            id="presetNameInput"
+                            value={presetNameDraft}
+                            placeholder="My Preset"
+                            onChange={(e) => setPresetNameDraft(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <button
+                            onClick={async () => {
+                                const saved = await saveAsCustomPreset(presetNameDraft);
+                                if (saved) {
+                                    setPresetNameDraft('');
+                                }
+                            }}
+                        >
+                            Save Current Settings as Preset
+                        </button>
                     </div>
                         <div className="submenu-back" onClick={handleBackClick}></div>
                     </div>
