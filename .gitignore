@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+.vite/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# local env
+.env
+.env.*
+!.env.example
+
+# editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# misc
+coverage/
+
+# proprietary Matrix Code font (not for public redistribution)
+src/fonts/MATRIX CODE NFI.OTF
+src/fonts/MATRIX CODE NFI.ttf
+src/fonts/MatrixCode.woff
+src/fonts/MatrixCode.woff2

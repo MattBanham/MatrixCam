@@ -1,0 +1,408 @@
+.App {
+    text-align: center;
+}
+  
+.App-logo {
+    height: 40vmin;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+    }
+}
+  
+.App-header {
+    background-color: #282c34;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(10px + 2vmin);
+    color: white;
+}
+  
+.App-link {
+    color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+    from {
+    transform: rotate(0deg);
+    }
+    to {
+    transform: rotate(360deg);
+    }
+}
+  
+  
+canvas {
+    background-color: black; /* Make sure the canvas itself is also black */
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevents extra scrolling due to overflow */
+    background-color: black; /* Full-page black background */
+}
+.webcam-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black; /* Ensure this is set */
+    -webkit-app-region: drag
+
+}
+.settings-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    background: #0e0e0e;
+    color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 255, 0, 0.5);
+    width: auto; /* Adjust width automatically */
+    transition: opacity 0.5s ease, visibility 0s linear 0.3s width 0.5s ease-in-out, height 0.5s ease; /* Smooth transition for size changes */
+    opacity: 1;
+    pointer-events: all;
+    -webkit-app-region: no-drag; /* Exclude this region from being draggable */
+}
+
+/* Fullscreen mode positioning */
+.webcam-container:fullscreen .settings-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+}
+
+/* Adjust the alignment and size of the checkbox */
+.settings-container label input[type="checkbox"] {
+    width: 12px; /* or any size you prefer */
+    height: 12px; /* or any size you prefer */
+    vertical-align: middle; /* Aligns the checkbox vertically with the text */
+}
+
+.settings-container h4 {
+    font-family: 'Monospace', monospace;
+    color: rgb(187, 185, 185);
+    cursor: pointer;
+}
+
+.settings-container label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.settings-container input[type="color"],
+.settings-container input[type="checkbox"],
+.settings-container input[type="range"],
+.settings-container select {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.settings-icon {
+    cursor: pointer;
+    position: relative; /* Set position context for absolute children */
+    z-index: 11; /* Above the submenu */
+    transition: opacity 0.5s ease, visibility 0s linear 1s; /* Add transition delay for visibility */
+    opacity: 1;
+    visibility: visible;
+    -webkit-app-region: no-drag; /* Exclude this region from being draggable */
+
+}
+
+.settings-icon img {
+    width: 24px;
+    height: 24px;
+}
+
+.settings-menu {
+    display: none; /* Hide initially */
+    position: relative;
+    top: 0px;
+    right: 0px;
+    padding: 10px;
+    z-index: 10; /* Below the settings icon */
+    width: 140px; /* Increased width to prevent text wrapping on main menu */
+    transition: width 0.5s ease-in-out, height 0.5s ease;
+    overflow: hidden; /* Hide the overflowing content during transition */
+    -webkit-app-region: no-drag; /* Exclude this region from being draggable */
+
+}
+
+.settings-menu.expanded {
+    width: 300px; /* Expanded width */    
+    
+}
+
+/* Allow back button to extend beyond menu boundaries when submenu is active */
+.settings-menu.active,
+.settings-menu.expanded.active {
+    overflow: visible; /* Override hidden overflow for submenu back button visibility */
+}
+
+/* Step 4: Adjust timing and visibility */
+.main-menu.inactive {
+    visibility: hidden; /* Hide when inactive */
+    transition: visibility 0s 0.5s, height 0.5s ease, transform 0.5s ease; /* Add delay for visibility transition */
+}
+
+.main-menu.active {
+    visibility: visible;
+    transition: height 0.5s ease;
+    padding-top: 10px;
+}
+
+/* When the main menu is active, ensure all items slide in from the right */
+.main-menu.active .menu-item {
+    transform: translateX(0); /* Adjust to match the movement of other items */
+    
+}
+
+/* Target the checkbox specifically */
+.main-menu.active input[type="checkbox"] {
+    margin: 2px 20px 3px 3px;  /* Reduce the margin around the checkbox */
+    background-color: #0e0e0e; /* Match the background color to the settings container */
+    border-radius: 3px; /* Optional: add a border-radius for a rounded look */
+    color: #0e0e0e;
+    
+}
+
+.menu-item,
+.submenu {
+    transform: translateX(0); /* Keep the menu in its original position */
+    transition: transform 0.5s ease; /* Transition for sliding */
+}
+
+.settings-menu.show {
+    display: block; /* Show on click */
+}
+
+.settings-menu.hide {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0s linear 1s; /* Delay the visibility transition */
+}
+/* When the submenu is active, slide the menu items to the left out of view */
+.settings-menu.active .menu-item {
+    transform: translateX(100%);
+}
+
+.menu-item{
+    margin-bottom: 10px;
+}
+
+/* Hover effect for main menu items */
+.menu-item:hover {
+    background-color: #1a1a1a; /* Slightly lighter than the container for visibility */
+    cursor: pointer;
+    border-radius: 5px; /* Change cursor to indicate it's clickable */
+}
+
+
+.menu-item h4, .menu-item label {
+    font-family: 'Monospace', monospace;
+    color: rgb(187, 185, 185);
+    cursor: pointer;
+    margin: 0px 0; /* Adjust as needed */
+    display: inline; /* Makes the label inline with the checkbox */
+    
+}
+
+.menu-item label {
+    display: absolute; /* Aligns the checkbox and label text in a row */
+    align-items: center; /* Centers items vertically */
+}
+
+.menu-title {
+    font-family: 'Monospace', monospace;
+    color: rgb(187, 185, 185);
+    font-size: 1em; /* Adjust to match the size of your h4 elements */
+    margin-top: 0px;
+    
+}
+
+.submenu {
+    display: none; /* Hide initially */
+    top: 0;
+    padding: 3px 42px 3px 3px; /* Keep controls clear of the back button hit area */
+    width: 300px; /* Match expanded menu width for proper back button positioning */
+    visibility: hidden; /* Start as hidden */
+    transform: translateX(-100%); /* Start off-screen */
+    transition: visibility 0s 0.5s, transform 0.5s ease; /* Delay visibility and transform */
+    will-change: transform; /* Improve performance for animations */
+}
+
+.submenu 
+.settings-menu.active .submenu {
+    transform: translateX(00px);
+    /* Move the submenu into view */
+}
+
+/* Adjust the position of submenu-back when submenu is active */
+.settings-menu.active .submenu-back {
+    transform: translateX(00px); /* Match the width of the submenu */
+}
+
+.submenu-container {
+    transition: height 0.3s ease-in-out; /* Adjust timing as needed */
+    overflow: hidden; /* Prevents content from spilling out during transition */
+}
+
+.submenu.show {
+    display: block; /* Show on click */
+    left: -200px;
+    opacity: 1;
+    visibility: visible; /* Make visible when active */
+    transform: translateX(0); /* Move into view */
+    transition: visibility 0s, transform 0.5s ease 0.5s; /* Delay for transform but not for visibility */
+}
+
+.submenu-back {
+    position: absolute;
+    right: 4px;
+    top: 8px;
+    width: 28px;
+    height: 28px;
+    background: #0e0e0e;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: transform 0.5s, opacity 0.5s; /* Transition for sliding and fading */
+}
+
+.submenu-back:before {
+    content: '⇒';
+    font-size: 20px;
+    color: white;
+}
+
+/* Maintain hover effect on settings icon */
+.settings-container:hover .settings-menu,
+.settings-icon:hover + .settings-menu,
+.settings-menu:hover {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Adjustments for fps counter if needed */
+.fps-counter {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    color: #00FF00;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    border-radius: 5px;
+    font-family: 'Monospace', monospace;
+    z-index: 20;
+}
+
+/* Fullscreen mode FPS counter */
+.webcam-container:fullscreen .fps-counter {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+}
+
+.settings-container, .fps-counter {
+    transition: opacity 0.3s ease;
+}
+
+/* Hide the settings container and icon, but keep the space so it can be hovered over */
+.settings-container.hide, .fps-counter.hide,
+.settings-icon.hide {
+    opacity: 0;
+    pointer-events: all; /* Allow pointer events so hover still works */
+    visibility: visible; /* Keep visible so it can be hovered */
+}
+
+.settings-menu.active + .settings-icon {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* Show the settings container on hover */
+.settings-container.hide:hover,
+.settings-container.hide:hover .settings-menu,
+.settings-icon.hide:hover + .settings-menu {
+    opacity: 1; /* Show the menu */
+    visibility: visible; /* Ensure it's visible */
+    pointer-events: all; /* React to mouse events */
+}
+
+/* Show the settings icon when the settings container is hovered */
+.settings-container.hide:hover .settings-icon,
+.settings-container:hover .settings-icon {
+    opacity: 1; /* Show the icon */
+    visibility: visible; /* Ensure it's visible */
+    pointer-events: all; /* React to mouse events */
+}
+
+.settings-link {
+    margin-top: 20px;
+    text-align: center;
+  }
+  
+  .settings-link a {
+    color: #61dafb;
+    text-decoration: none;
+    font-family: 'Monospace', monospace;
+    font-size: 1em;
+  }
+  
+  .settings-link a:hover {
+    text-decoration: underline;
+  }
+  
+  .buy-me-a-coffee {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Fullscreen mode buy-me-a-coffee */
+  .webcam-container:fullscreen .buy-me-a-coffee {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .buy-me-a-coffee button {
+    background-color: #ffdd00;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .buy-me-a-coffee button:hover {
+    background-color: #ffaa00;
+  }
+  
+  .settings-container.hide .buy-me-a-coffee {
+    display: none;
+  }
