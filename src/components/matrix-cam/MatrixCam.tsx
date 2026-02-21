@@ -1402,7 +1402,7 @@ const MatrixCam = () => {
             </div>
 
             <div className="buy-me-a-coffee" style={{ display: hideUI ? 'none' : 'flex' }}>
-                <a href="https://buymeacoffee.com/matt.banham" target="_blank" rel="noopener noreferrer">
+                <a href="https://buymeacoffee.com/matt_banham" target="_blank" rel="noopener noreferrer">
                     <button>Buy Me a Coffee</button>
                 </a>
             </div>
